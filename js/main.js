@@ -5,6 +5,10 @@ Vue.component('list_with_tasks', {
         list: {
             type: Object,
             required: true,
+        },
+        indexOfList: {
+            type: Number,
+            required: true,
         }
     },
     template: `
@@ -42,6 +46,10 @@ Vue.component('list_with_tasks', {
                         copy.tasks[i] = Object.assign({}, this.list.tasks[i]);
                     }
                     console.log(copy);
+                    console.log("indexOfList - " + this.indexOfList);
+
+                    eventBus.$emit('move-me-to-second', copy);
+                    eventBus.$emit('delete-me-from-first', this.indexOfList);//Эти два события отрабатывают нормально, доп. проверок не делал - список просто перемещается при соблюдении условий, не затрагивая другие списки
                 }
             }, 100);
 
@@ -72,8 +80,8 @@ Vue.component('column', {
     template:`
         <div class="column">
             <p>{{column_name}}</p>
-            <div  v-if="listsArray" v-for="list in listsArray">
-                <list_with_tasks :list="list"></list_with_tasks>
+            <div  v-if="listsArray" v-for="(list, index) in listsArray">
+                <list_with_tasks :list="list" :indexOfList="index"></list_with_tasks>
             </div>
         </div>
     `,
@@ -81,6 +89,18 @@ Vue.component('column', {
         eventBus.$on('takeFromForm', function(copy){//Вроде работает нормально, данные выводятся в столбце
             if(this.column_id =='first'){
                 this.listsArray.push(copy);
+            }
+        }.bind(this)),
+
+        eventBus.$on('move-me-to-second', function(copy){
+            if(this.column_id == 'second'){
+                this.listsArray.push(copy);
+            }
+        }.bind(this)),
+
+        eventBus.$on('delete-me-from-first', function(index){
+            if(this.column_id =='first'){
+                this.listsArray.splice(index, 1);
             }
         }.bind(this))
     },
