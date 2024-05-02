@@ -1,7 +1,27 @@
 let eventBus = new Vue();
 
-Vue.component('list', {
-
+Vue.component('list_with_tasks', {
+    props:{
+        list: {
+            type: Object,
+            required: true,
+        }
+    },
+    template: `
+        <div class="list">
+            <h3>{{list.title}}</h3>
+            <p><input type="checkbox" v-model="list.tasks.task1.activity" @click="checkboxClick">{{list.tasks.task1.name}}</p>
+            <p><input type="checkbox" v-model="list.tasks.task2.activity" @click="checkboxClick">{{list.tasks.task2.name}}</p>
+            <p><input type="checkbox" v-model="list.tasks.task3.activity" @click="checkboxClick">{{list.tasks.task3.name}}</p>
+            <p v-if="list.tasks.task4.name"><input type="checkbox" v-model="list.tasks.task4.activity" @click="checkboxClick">{{list.tasks.task4.name}}</p>
+            <p v-if="list.tasks.task5.name"><input type="checkbox" v-model="list.tasks.task5.activity" @click="checkboxClick">{{list.tasks.task5.name}}</p>
+        </div>
+    `,
+    methods:{//Метод реагирует. Есть подозрение что при дальнейшем написании логики она будет применяться ко всем экземплярам компонента - потому что нет идентификации. Данные изменяются в конкретном объекте не затрагивая сторонние объекты
+        checkboxClick(){
+            console.log(this.list);
+        }
+    }
 })
 
 Vue.component('column', {
@@ -22,8 +42,20 @@ Vue.component('column', {
         }
     },
     template:`
-        <p>Колонка {{column_name}}</p>
+        <div class="column">
+            <p>{{column_name}}</p>
+            <div  v-if="listsArray" v-for="list in listsArray">
+                <list_with_tasks :list="list"></list_with_tasks>
+            </div>
+        </div>
     `,
+    mounted(){
+        eventBus.$on('takeFromForm', function(copy){//Вроде работает нормально, данные выводятся в столбце
+            if(this.column_id =='first'){
+                this.listsArray.push(copy);
+            }
+        }.bind(this))
+    },
 })
 
 Vue.component('creator', {
@@ -79,6 +111,8 @@ Vue.component('creator', {
                 this.hiddenFlag5 = false;
             }
         },
+
+
         customSubmit(){//Проверил, копирование адекватное, после копирования обнулил болванку, вывел копию в консоль - данные сохранились в копии после сброса болванки.
             let copy = Object.assign({}, this.blank);
             
