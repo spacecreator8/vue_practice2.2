@@ -19,7 +19,35 @@ Vue.component('list_with_tasks', {
     `,
     methods:{//Метод реагирует. Есть подозрение что при дальнейшем написании логики она будет применяться ко всем экземплярам компонента - потому что нет идентификации. Данные изменяются в конкретном объекте не затрагивая сторонние объекты
         checkboxClick(){
-            console.log(this.list);
+            // Все работает, НО! почему-то данные вывода в консоль запаздывают на один клик по ЧБ.(исправил поставив задержку)
+
+            setTimeout(() => {
+                let overalCountTasks = 0;
+                let activeCheckboxes = 0;
+                for(let i in this.list.tasks){
+                    if(this.list.tasks[i].name){
+                        overalCountTasks++;
+                        if(this.list.tasks[i].activity){
+                            activeCheckboxes++;
+                        }
+                    }
+                }
+
+                if(overalCountTasks/activeCheckboxes <= 2){
+                    console.log("Соотношение = " + overalCountTasks/activeCheckboxes);
+                    let copy = Object.assign({}, this.list);
+            
+                    copy.tasks = Object.assign({}, this.list.tasks);
+                    for(let i in this.list.tasks){
+                        copy.tasks[i] = Object.assign({}, this.list.tasks[i]);
+                    }
+                    console.log(copy);
+                }
+            }, 100);
+
+
+
+            //При не правильном расчете соотношения активный\ неактивный - ОШИБКА ЗДЕСЬ!!! - js асинхронный и изменение данных объекта делается долго, а цикл считает быстро.!!!!!!!!!
         }
     }
 })
