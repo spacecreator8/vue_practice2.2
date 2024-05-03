@@ -52,30 +52,19 @@ Vue.component('list_with_tasks', {
                 }
 
                 if(overalCountTasks/activeCheckboxes == 1){
-                    console.log("Соотношение = " + overalCountTasks/activeCheckboxes);
-                    console.log(copy);
-                    console.log("indexOfList - " + this.indexOfList);
-
                     if(this.column_id == 'second'){
                         eventBus.$emit('move-me-to-third', copy);
                         eventBus.$emit('delete-me-from-second', this.indexOfList);
                     }
                 
                 }else if(overalCountTasks/activeCheckboxes <= 2){
-                    console.log("Соотношение = " + overalCountTasks/activeCheckboxes);
-
-
                     if(this.column_id == 'first'){
+                        
                         eventBus.$emit('move-me-to-second', copy);
                         eventBus.$emit('delete-me-from-first', this.indexOfList);//Эти два события отрабатывают нормально, доп. проверок не делал - список просто перемещается при соблюдении условий, не затрагивая другие списки
                     }
-                    
                 }
             }, 100);
-
-
-
-            //При не правильном расчете соотношения активный\ неактивный - ОШИБКА ЗДЕСЬ!!! - js асинхронный и изменение данных объекта делается долго, а цикл считает быстро.!!!!!!!!!
         }
     }
 })
@@ -113,6 +102,13 @@ Vue.component('column', {
             }
         }.bind(this)),
 
+        eventBus.$on('say-me-count-first', function(){
+            if(this.column_id == 'first'){
+                let len = this.listsArray.length;
+                eventBus.$emit('say-me-count-first-resp', len);
+            }
+        }.bind(this))
+
         eventBus.$on('move-me-to-second', function(copy){
             if(this.column_id == 'second'){
                 this.listsArray.push(copy);
@@ -126,9 +122,7 @@ Vue.component('column', {
         }.bind(this)),
 
         eventBus.$on('move-me-to-third', function(copy){
-
             if(this.column_id == 'third'){
-                console.log("Событие добралось до обработчика");
                 this.beDisabled = true;
                 this.listsArray.push(copy);
             }
@@ -137,7 +131,6 @@ Vue.component('column', {
         eventBus.$on('delete-me-from-second', function(index){
 
             if(this.column_id =='second'){
-                console.log("Событие добралось до обработчика");
                 this.listsArray.splice(index, 1);
             }
         }.bind(this))
@@ -147,6 +140,9 @@ Vue.component('column', {
 Vue.component('creator', {
     template:`
         <form>
+            <div v-if="errors.length" v-for="er in errors">
+                <p class="red-text">{{er}}</p>
+            </div>
             <p><b>Заголовок:</b> <input type="text" v-model="blank.title"></p>
             <p>Задача - 1: <input type="text" v-model="blank.tasks.task1.name"></p>
             <p>Задача - 2: <input type="text" v-model="blank.tasks.task2.name"></p>
@@ -161,6 +157,8 @@ Vue.component('creator', {
         return {
             hiddenFlag4: true,
             hiddenFlag5: true,
+            countInFirst: 0,
+            errors: [],
 
             blank:{
                 title: null,
@@ -200,40 +198,57 @@ Vue.component('creator', {
 
 
         customSubmit(){//Проверил, копирование адекватное, после копирования обнулил болванку, вывел копию в консоль - данные сохранились в копии после сброса болванки.
-            let copy = Object.assign({}, this.blank);
-            
-            copy.tasks = Object.assign({}, this.blank.tasks);
-            for(let i in this.blank.tasks){
-                copy.tasks[i] = Object.assign({}, this.blank.tasks[i]);
+            eventBus.$emit('say-me-count-first');
+            this.errors = [];
+            if(this.countInFirst >= 3){
+                this.errors.push('В первом столбце может быть максимум 3 записи.');
             }
-            this.blank = {
-                title: null,
-                tasks:{
-                    task1: {
-                        name: null,
-                        activity: false
-                    },
-                    task2: {
-                        name: null,
-                        activity: false
-                    },
-                    task3: {
-                        name: null,
-                        activity: false
-                    },
-                    task4: {
-                        name: null,
-                        activity: false
-                    },
-                    task5: {
-                        name: null,
-                        activity: false
-                    },
+            if(!this.blank.title){
+                this.errors.push('Заголовок обязателен.')
+            }
+            if(!this.blank.tasks.task1.name || !this.blank.tasks.task2.name || !this.blank.tasks.task3.name){
+                this.errors.push('Первые три поля обязательны к заполнению.')
+            }
+            if(!this.errors.length){
+                let copy = Object.assign({}, this.blank);
+                copy.tasks = Object.assign({}, this.blank.tasks);
+                for(let i in this.blank.tasks){
+                    copy.tasks[i] = Object.assign({}, this.blank.tasks[i]);
                 }
-            }
-            eventBus.$emit('takeFromForm', copy);
+                this.blank = {
+                    title: null,
+                    tasks:{
+                        task1: {
+                            name: null,
+                            activity: false
+                        },
+                        task2: {
+                            name: null,
+                            activity: false
+                        },
+                        task3: {
+                            name: null,
+                            activity: false
+                        },
+                        task4: {
+                            name: null,
+                            activity: false
+                        },
+                        task5: {
+                            name: null,
+                            activity: false
+                        },
+                    }
+                }
+                eventBus.$emit('takeFromForm', copy);
+            } 
         }
 
+    },
+    mounted(){
+        eventBus.$on('say-me-count-first-resp', function(len){
+            this.countInFirst = len;
+        }.bind(this))
     }
 })
 
