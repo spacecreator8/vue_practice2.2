@@ -40,6 +40,7 @@ Vue.component('list_with_tasks', {
             <p><input type="checkbox" :disabled="beDisabled || block" v-model="list.tasks.task3.activity" @click="checkboxClick">{{list.tasks.task3.name}}</p>
             <p v-if="list.tasks.task4.name"><input type="checkbox" :disabled="beDisabled || block" v-model="list.tasks.task4.activity" @click="checkboxClick">{{list.tasks.task4.name}}</p>
             <p v-if="list.tasks.task5.name"><input type="checkbox" :disabled="beDisabled || block" v-model="list.tasks.task5.activity" @click="checkboxClick">{{list.tasks.task5.name}}</p>
+            <p v-if="list.dateOfFinish">{{list.dateOfFinish}}</p>
         </div>
     `,
     methods: {//Метод реагирует. Есть подозрение что при дальнейшем написании логики она будет применяться ко всем экземплярам компонента - потому что нет идентификации. Данные изменяются в конкретном объекте не затрагивая сторонние объекты
@@ -120,6 +121,9 @@ Vue.component('column', {
         eventBus.$on('takeFromForm', function (copy) {//Вроде работает нормально, данные выводятся в столбце
             if (this.column_id == 'first') {
                 this.listsArray.push(copy);
+                // let arrayForStorrage = this.listsArray.slice();
+                // eventBus.$emit('pushInLocalStorage', this.column_id, arrayForStorrage)
+                
             }
         }.bind(this)),
 
@@ -133,7 +137,6 @@ Vue.component('column', {
 
         eventBus.$on('move-me-to-second', function (copy) {
             if (this.column_id == 'second') {
-                console.log(this.listsArray.length);
                 if (this.listsArray.length < 5) {
                     this.listsArray.push(copy);
                 } else {
@@ -160,6 +163,7 @@ Vue.component('column', {
 
             eventBus.$on('move-me-to-third', function (copy) {
                 if (this.column_id == 'third') {
+                    copy.dateOfFinish = new Date();
                     this.beDisabled = true;
                     this.listsArray.push(copy);
                     eventBus.$emit('unblock-first-col');
@@ -209,6 +213,7 @@ Vue.component('creator', {
 
             blank: {
                 title: null,
+                dateOfFinish: null,
                 tasks: {
                     task1: {
                         name: null,
@@ -305,5 +310,9 @@ let app = new Vue({
         localStorage.setItem('first', JSON.stringify([]));
         localStorage.setItem('second', JSON.stringify([]));
         localStorage.setItem('third', JSON.stringify([]));
+
+        // eventBus.$on('pushInLocalStorage', function(id, array){
+        //     localStorage(id, JSON.stringify(array));
+        // }.bind(this))
     }
 })
