@@ -157,15 +157,17 @@ Vue.component('column', {
             if(this.column_id == 'third'){
                 this.beDisabled = true;
                 this.listsArray.push(copy);
-                if(this.firstColumnBlock){
-                    eventBus.$emit('unblock-first-col');
-                }
+                eventBus.$emit('unblock-first-col');
+
             }
         }.bind(this)),
 
         eventBus.$on('unblock-first-col', function(){
-            if(this.column_id == 'first' && this.firstColumnBlock){
-                this.firstColumnBlock = false;
+            if(this.column_id == 'first'){
+                if(this.firstColumnBlock){
+                    this.firstColumnBlock = false;
+                }
+
             }
         }.bind(this))
 
