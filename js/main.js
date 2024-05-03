@@ -103,8 +103,8 @@ Vue.component('column', {
     },
     data() {
         return {
-            listsArray: JSON.parse(localStorage[this.column_id]),
-            //listsArray: [],
+            listsArray: localStorage[this.column_id] ? JSON.parse(localStorage[this.column_id]) : [],
+            // listsArray: [],
             beDisabled: false,
             firstColumnBlock: false,
         }
@@ -121,8 +121,9 @@ Vue.component('column', {
         eventBus.$on('takeFromForm', function (copy) {//Вроде работает нормально, данные выводятся в столбце
             if (this.column_id == 'first') {
                 this.listsArray.push(copy);
-                // let arrayForStorrage = this.listsArray.slice();
-                // eventBus.$emit('pushInLocalStorage', this.column_id, arrayForStorrage)
+                let arrayForStorrage = this.listsArray.slice();
+                eventBus.$emit('saveMeInStorage', this.column_id, arrayForStorrage)
+
                 
             }
         }.bind(this)),
@@ -142,24 +143,38 @@ Vue.component('column', {
                 } else {
                     eventBus.$emit('block-first-col');
                 }
+                let arrayForStorrage = this.listsArray.slice();
+                eventBus.$emit('saveMeInStorage', this.column_id, arrayForStorrage)
 
             }
         }.bind(this)),
 
-            eventBus.$on('block-first-col', function () {
-                if (this.column_id == 'first') {
-                    this.firstColumnBlock = true;
-                }
+        eventBus.$on('block-first-col', function () {
+            if (this.column_id == 'first') {
+                this.firstColumnBlock = true;
+            }
 
-            }.bind(this))
+        }.bind(this))
 
         eventBus.$on('delete-me-from-first', function (index) {
             if (this.column_id == 'first') {
                 if (!this.firstColumnBlock) {
                     this.listsArray.splice(index, 1);
                 }
+                let arrayForStorrage = this.listsArray.slice();
+                eventBus.$emit('saveMeInStorage', this.column_id, arrayForStorrage)
             }
         }.bind(this)),
+
+        eventBus.$on('delete-me-from-second', function (index) {
+
+            if (this.column_id == 'second') {
+                this.listsArray.splice(index, 1);
+
+                let arrayForStorrage = this.listsArray.slice();
+                eventBus.$emit('saveMeInStorage', this.column_id, arrayForStorrage)
+            }
+        }.bind(this))
 
             eventBus.$on('move-me-to-third', function (copy) {
                 if (this.column_id == 'third') {
@@ -168,6 +183,8 @@ Vue.component('column', {
                     this.listsArray.push(copy);
                     eventBus.$emit('unblock-first-col');
 
+                    let arrayForStorrage = this.listsArray.slice();
+                    eventBus.$emit('saveMeInStorage', this.column_id, arrayForStorrage)
                 }
             }.bind(this)),
 
@@ -179,12 +196,7 @@ Vue.component('column', {
                 }
             }.bind(this))
 
-        eventBus.$on('delete-me-from-second', function (index) {
 
-            if (this.column_id == 'second') {
-                this.listsArray.splice(index, 1);
-            }
-        }.bind(this))
     },
 })
 
@@ -307,12 +319,8 @@ Vue.component('creator', {
 let app = new Vue({
     el: '#app',
     mounted(){
-        localStorage.setItem('first', JSON.stringify([]));
-        localStorage.setItem('second', JSON.stringify([]));
-        localStorage.setItem('third', JSON.stringify([]));
-
-        // eventBus.$on('pushInLocalStorage', function(id, array){
-        //     localStorage(id, JSON.stringify(array));
-        // }.bind(this))
+        eventBus.$on('saveMeInStorage', (key, value) => {
+            localStorage.setItem(key, JSON.stringify(value));
+        })
     }
 })
