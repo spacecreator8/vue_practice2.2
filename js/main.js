@@ -17,16 +17,25 @@ Vue.component('list_with_tasks', {
         beDisabled: {
             type: Boolean,
             required: true,
+        },
+        block: {
+            type: Boolean,
+            required: true,
+        }
+    },
+    data(){
+        return{
+            countInSecond: 0,
         }
     },
     template: `
         <div class="list">
             <h3>{{list.title}}</h3>
-            <p><input type="checkbox" :disabled="beDisabled" v-model="list.tasks.task1.activity" @click="checkboxClick">{{list.tasks.task1.name}}</p>
-            <p><input type="checkbox" :disabled="beDisabled" v-model="list.tasks.task2.activity" @click="checkboxClick">{{list.tasks.task2.name}}</p>
-            <p><input type="checkbox" :disabled="beDisabled" v-model="list.tasks.task3.activity" @click="checkboxClick">{{list.tasks.task3.name}}</p>
-            <p v-if="list.tasks.task4.name"><input type="checkbox" :disabled="beDisabled" v-model="list.tasks.task4.activity" @click="checkboxClick">{{list.tasks.task4.name}}</p>
-            <p v-if="list.tasks.task5.name"><input type="checkbox" :disabled="beDisabled" v-model="list.tasks.task5.activity" @click="checkboxClick">{{list.tasks.task5.name}}</p>
+            <p><input type="checkbox" :disabled="beDisabled || block" v-model="list.tasks.task1.activity" @click="checkboxClick">{{list.tasks.task1.name}}</p>
+            <p><input type="checkbox" :disabled="beDisabled || block" v-model="list.tasks.task2.activity" @click="checkboxClick">{{list.tasks.task2.name}}</p>
+            <p><input type="checkbox" :disabled="beDisabled || block" v-model="list.tasks.task3.activity" @click="checkboxClick">{{list.tasks.task3.name}}</p>
+            <p v-if="list.tasks.task4.name"><input type="checkbox" :disabled="beDisabled || block" v-model="list.tasks.task4.activity" @click="checkboxClick">{{list.tasks.task4.name}}</p>
+            <p v-if="list.tasks.task5.name"><input type="checkbox" :disabled="beDisabled || block" v-model="list.tasks.task5.activity" @click="checkboxClick">{{list.tasks.task5.name}}</p>
         </div>
     `,
     methods:{//Метод реагирует. Есть подозрение что при дальнейшем написании логики она будет применяться ко всем экземплярам компонента - потому что нет идентификации. Данные изменяются в конкретном объекте не затрагивая сторонние объекты
@@ -59,13 +68,19 @@ Vue.component('list_with_tasks', {
                 
                 }else if(overalCountTasks/activeCheckboxes <= 2){
                     if(this.column_id == 'first'){
-                        
-                        eventBus.$emit('move-me-to-second', copy);
-                        eventBus.$emit('delete-me-from-first', this.indexOfList);//Эти два события отрабатывают нормально, доп. проверок не делал - список просто перемещается при соблюдении условий, не затрагивая другие списки
+
+                        if(this.countInSecond < 5){
+                            eventBus.$emit('move-me-to-second', copy);
+                            eventBus.$emit('delete-me-from-first', this.indexOfList);
+                       
+                        }
                     }
                 }
             }, 100);
         }
+    },
+    mounted(){
+
     }
 })
 
@@ -85,13 +100,14 @@ Vue.component('column', {
         return{
             listsArray: [],
             beDisabled: false,
+            firstColumnBlock: false,
         }
     },
     template:`
         <div class="column">
             <p>{{column_name}}</p>
             <div  v-if="listsArray" v-for="(list, index) in listsArray">
-                <list_with_tasks :list="list" :indexOfList="index" :column_id="column_id" :beDisabled="beDisabled"></list_with_tasks>
+                <list_with_tasks :block="firstColumnBlock" :list="list" :indexOfList="index" :column_id="column_id" :beDisabled="beDisabled"></list_with_tasks>
             </div>
         </div>
     `,
@@ -109,15 +125,31 @@ Vue.component('column', {
             }
         }.bind(this))
 
+
         eventBus.$on('move-me-to-second', function(copy){
             if(this.column_id == 'second'){
-                this.listsArray.push(copy);
+                console.log(this.listsArray.length);
+                if(this.listsArray.length < 5){
+                    this.listsArray.push(copy);
+                }else{
+                    eventBus.$emit('block-first-col');
+                }
+
             }
         }.bind(this)),
 
+        eventBus.$on('block-first-col', function(){
+            if(this.column_id == 'first'){
+                this.firstColumnBlock = true;
+            }
+
+        }.bind(this))
+
         eventBus.$on('delete-me-from-first', function(index){
             if(this.column_id =='first'){
-                this.listsArray.splice(index, 1);
+                if(!this.firstColumnBlock){
+                    this.listsArray.splice(index, 1);
+                }
             }
         }.bind(this)),
 
@@ -125,8 +157,17 @@ Vue.component('column', {
             if(this.column_id == 'third'){
                 this.beDisabled = true;
                 this.listsArray.push(copy);
+                if(this.firstColumnBlock){
+                    eventBus.$emit('unblock-first-col');
+                }
             }
         }.bind(this)),
+
+        eventBus.$on('unblock-first-col', function(){
+            if(this.column_id == 'first' && this.firstColumnBlock){
+                this.firstColumnBlock = false;
+            }
+        }.bind(this))
 
         eventBus.$on('delete-me-from-second', function(index){
 
