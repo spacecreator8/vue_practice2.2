@@ -1,7 +1,11 @@
+
+
+
+
 let eventBus = new Vue();
 
 Vue.component('list_with_tasks', {
-    props:{
+    props: {
         list: {
             type: Object,
             required: true,
@@ -23,8 +27,8 @@ Vue.component('list_with_tasks', {
             required: true,
         }
     },
-    data(){
-        return{
+    data() {
+        return {
             countInSecond: 0,
         }
     },
@@ -38,72 +42,73 @@ Vue.component('list_with_tasks', {
             <p v-if="list.tasks.task5.name"><input type="checkbox" :disabled="beDisabled || block" v-model="list.tasks.task5.activity" @click="checkboxClick">{{list.tasks.task5.name}}</p>
         </div>
     `,
-    methods:{//Метод реагирует. Есть подозрение что при дальнейшем написании логики она будет применяться ко всем экземплярам компонента - потому что нет идентификации. Данные изменяются в конкретном объекте не затрагивая сторонние объекты
-        checkboxClick(){
+    methods: {//Метод реагирует. Есть подозрение что при дальнейшем написании логики она будет применяться ко всем экземплярам компонента - потому что нет идентификации. Данные изменяются в конкретном объекте не затрагивая сторонние объекты
+        checkboxClick() {
             // Все работает, НО! почему-то данные вывода в консоль запаздывают на один клик по ЧБ.(исправил поставив задержку)
 
             setTimeout(() => {
                 let overalCountTasks = 0;
                 let activeCheckboxes = 0;
-                for(let i in this.list.tasks){
-                    if(this.list.tasks[i].name){
+                for (let i in this.list.tasks) {
+                    if (this.list.tasks[i].name) {
                         overalCountTasks++;
-                        if(this.list.tasks[i].activity){
+                        if (this.list.tasks[i].activity) {
                             activeCheckboxes++;
                         }
                     }
                 }
-                
+
                 let copy = Object.assign({}, this.list);
                 copy.tasks = Object.assign({}, this.list.tasks);
-                for(let i in this.list.tasks){
+                for (let i in this.list.tasks) {
                     copy.tasks[i] = Object.assign({}, this.list.tasks[i]);
                 }
 
-                if(overalCountTasks/activeCheckboxes == 1){
-                    if(this.column_id == 'second'){
+                if (overalCountTasks / activeCheckboxes == 1) {
+                    if (this.column_id == 'second') {
                         eventBus.$emit('move-me-to-third', copy);
                         eventBus.$emit('delete-me-from-second', this.indexOfList);
                     }
-                
-                }else if(overalCountTasks/activeCheckboxes <= 2){
-                    if(this.column_id == 'first'){
 
-                        if(this.countInSecond < 5){
+                } else if (overalCountTasks / activeCheckboxes <= 2) {
+                    if (this.column_id == 'first') {
+
+                        if (this.countInSecond < 5) {
                             eventBus.$emit('move-me-to-second', copy);
                             eventBus.$emit('delete-me-from-first', this.indexOfList);
-                       
+
                         }
                     }
                 }
             }, 100);
         }
     },
-    mounted(){
+    mounted() {
 
     }
 })
 
 Vue.component('column', {
-    props:{
-        column_name:{
+    props: {
+        column_name: {
             type: String,
             required: true,
         },
-        column_id:{
+        column_id: {
             type: String,
             required: true,
         }
-        
+
     },
-    data(){
-        return{
-            listsArray: [],
+    data() {
+        return {
+            listsArray: JSON.parse(localStorage[this.column_id]),
+            //listsArray: [],
             beDisabled: false,
             firstColumnBlock: false,
         }
     },
-    template:`
+    template: `
         <div class="column">
             <p>{{column_name}}</p>
             <div  v-if="listsArray" v-for="(list, index) in listsArray">
@@ -111,69 +116,68 @@ Vue.component('column', {
             </div>
         </div>
     `,
-    mounted(){
-        eventBus.$on('takeFromForm', function(copy){//Вроде работает нормально, данные выводятся в столбце
-            if(this.column_id =='first'){
+    mounted() {
+        eventBus.$on('takeFromForm', function (copy) {//Вроде работает нормально, данные выводятся в столбце
+            if (this.column_id == 'first') {
                 this.listsArray.push(copy);
             }
         }.bind(this)),
 
-        eventBus.$on('say-me-count-first', function(){
-            if(this.column_id == 'first'){
-                let len = this.listsArray.length;
-                eventBus.$emit('say-me-count-first-resp', len);
-            }
-        }.bind(this))
+            eventBus.$on('say-me-count-first', function () {
+                if (this.column_id == 'first') {
+                    let len = this.listsArray.length;
+                    eventBus.$emit('say-me-count-first-resp', len);
+                }
+            }.bind(this))
 
 
-        eventBus.$on('move-me-to-second', function(copy){
-            if(this.column_id == 'second'){
+        eventBus.$on('move-me-to-second', function (copy) {
+            if (this.column_id == 'second') {
                 console.log(this.listsArray.length);
-                if(this.listsArray.length < 5){
+                if (this.listsArray.length < 5) {
                     this.listsArray.push(copy);
-                }else{
+                } else {
                     eventBus.$emit('block-first-col');
                 }
 
             }
         }.bind(this)),
 
-        eventBus.$on('block-first-col', function(){
-            if(this.column_id == 'first'){
-                this.firstColumnBlock = true;
-            }
+            eventBus.$on('block-first-col', function () {
+                if (this.column_id == 'first') {
+                    this.firstColumnBlock = true;
+                }
 
-        }.bind(this))
+            }.bind(this))
 
-        eventBus.$on('delete-me-from-first', function(index){
-            if(this.column_id =='first'){
-                if(!this.firstColumnBlock){
+        eventBus.$on('delete-me-from-first', function (index) {
+            if (this.column_id == 'first') {
+                if (!this.firstColumnBlock) {
                     this.listsArray.splice(index, 1);
                 }
             }
         }.bind(this)),
 
-        eventBus.$on('move-me-to-third', function(copy){
-            if(this.column_id == 'third'){
-                this.beDisabled = true;
-                this.listsArray.push(copy);
-                eventBus.$emit('unblock-first-col');
+            eventBus.$on('move-me-to-third', function (copy) {
+                if (this.column_id == 'third') {
+                    this.beDisabled = true;
+                    this.listsArray.push(copy);
+                    eventBus.$emit('unblock-first-col');
 
-            }
-        }.bind(this)),
-
-        eventBus.$on('unblock-first-col', function(){
-            if(this.column_id == 'first'){
-                if(this.firstColumnBlock){
-                    this.firstColumnBlock = false;
                 }
+            }.bind(this)),
 
-            }
-        }.bind(this))
+            eventBus.$on('unblock-first-col', function () {
+                if (this.column_id == 'first') {
+                    if (this.firstColumnBlock) {
+                        this.firstColumnBlock = false;
+                    }
+                }
+            }.bind(this))
 
-        eventBus.$on('delete-me-from-second', function(index){
+        eventBus.$on('delete-me-from-second', function (index) {
 
-            if(this.column_id =='second'){
+            if (this.column_id == 'second') {
                 this.listsArray.splice(index, 1);
             }
         }.bind(this))
@@ -181,7 +185,7 @@ Vue.component('column', {
 })
 
 Vue.component('creator', {
-    template:`
+    template: `
         <form>
             <div v-if="errors.length" v-for="er in errors">
                 <p class="red-text">{{er}}</p>
@@ -196,16 +200,16 @@ Vue.component('creator', {
             <button  @click.prevent="customSubmit">Добавить</button>
         </form>
     `,
-    data(){
+    data() {
         return {
             hiddenFlag4: true,
             hiddenFlag5: true,
             countInFirst: 0,
             errors: [],
 
-            blank:{
+            blank: {
                 title: null,
-                tasks:{
+                tasks: {
                     task1: {
                         name: null,
                         activity: false
@@ -230,37 +234,37 @@ Vue.component('creator', {
             }
         }
     },
-    methods:{
-        addTask(){
-            if(this.hiddenFlag4){
+    methods: {
+        addTask() {
+            if (this.hiddenFlag4) {
                 this.hiddenFlag4 = false;
-            }else{
+            } else {
                 this.hiddenFlag5 = false;
             }
         },
 
 
-        customSubmit(){//Проверил, копирование адекватное, после копирования обнулил болванку, вывел копию в консоль - данные сохранились в копии после сброса болванки.
+        customSubmit() {//Проверил, копирование адекватное, после копирования обнулил болванку, вывел копию в консоль - данные сохранились в копии после сброса болванки.
             eventBus.$emit('say-me-count-first');
             this.errors = [];
-            if(this.countInFirst >= 3){
+            if (this.countInFirst >= 3) {
                 this.errors.push('В первом столбце может быть максимум 3 записи.');
             }
-            if(!this.blank.title){
+            if (!this.blank.title) {
                 this.errors.push('Заголовок обязателен.')
             }
-            if(!this.blank.tasks.task1.name || !this.blank.tasks.task2.name || !this.blank.tasks.task3.name){
+            if (!this.blank.tasks.task1.name || !this.blank.tasks.task2.name || !this.blank.tasks.task3.name) {
                 this.errors.push('Первые три поля обязательны к заполнению.')
             }
-            if(!this.errors.length){
+            if (!this.errors.length) {
                 let copy = Object.assign({}, this.blank);
                 copy.tasks = Object.assign({}, this.blank.tasks);
-                for(let i in this.blank.tasks){
+                for (let i in this.blank.tasks) {
                     copy.tasks[i] = Object.assign({}, this.blank.tasks[i]);
                 }
                 this.blank = {
                     title: null,
-                    tasks:{
+                    tasks: {
                         task1: {
                             name: null,
                             activity: false
@@ -284,12 +288,12 @@ Vue.component('creator', {
                     }
                 }
                 eventBus.$emit('takeFromForm', copy);
-            } 
+            }
         }
 
     },
-    mounted(){
-        eventBus.$on('say-me-count-first-resp', function(len){
+    mounted() {
+        eventBus.$on('say-me-count-first-resp', function (len) {
             this.countInFirst = len;
         }.bind(this))
     }
@@ -297,5 +301,9 @@ Vue.component('creator', {
 
 let app = new Vue({
     el: '#app',
-
+    mounted(){
+        localStorage.setItem('first', JSON.stringify([]));
+        localStorage.setItem('second', JSON.stringify([]));
+        localStorage.setItem('third', JSON.stringify([]));
+    }
 })
