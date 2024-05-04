@@ -184,11 +184,61 @@ Vue.component('column', {
                     this.beDisabled = true;
                     this.listsArray.push(copy);
                     eventBus.$emit('unblock-first-col');
+                    eventBus.$emit('scan-first-col');
 
                     let arrayForStorrage = this.listsArray.slice();
                     eventBus.$emit('saveMeInStorage', this.column_id, arrayForStorrage)
                 }
             }.bind(this)),
+
+            eventBus.$on('scan-first-col', () => {
+                setTimeout(() => {
+                    if(this.column_id == 'first') {
+                        console.log(this.listsArray.length); // элементы массива он видит
+                        let index = 0;
+                        for(let i of this.listsArray) {
+                            let over = 0;
+                            let act = 0;
+                            for (let taskKey in i.tasks) {
+                                let task = i.tasks[taskKey];
+                                if (task.activity == true) {
+                                    act++;
+                                }
+                                if (task.name != null) {
+                                    over++;
+                                }
+                            }
+                            console.log(`over - ${over} : act - ${act}`);
+            
+                            if ((over / act) >= 1.5 && (over / act) <= 2) {
+                                console.log(`Объект найден, его индекс - ${index}`);
+            
+                                let copy = Object.assign({}, this.listsArray[index]);
+                                copy.tasks = Object.assign({}, this.listsArray[index].tasks);
+                                for(key in copy.tasks){
+                                    copy.tasks[key] = Object.assign({}, this.listsArray[index].tasks[key]);
+                                }
+                                console.log(copy);
+                                eventBus.$emit('just-push-in-second', copy);
+                                eventBus.$emit('just-del-in-first', index);
+                            }
+                            index++;
+                        }
+                    }
+                }, 100)
+            })
+
+            eventBus.$on('just-push-in-second', (copy)=>{
+                if(this.column_id =='second'){
+                    this.listsArray.push(copy);
+                }
+            })
+
+            eventBus.$on('just-del-in-first', (index)=>{
+                if(this.column_id == 'first'){
+                    this.listsArray.splice(index, 1);
+                }
+            })
 
             eventBus.$on('unblock-first-col', function () {
                 if (this.column_id == 'first') {
