@@ -34,6 +34,9 @@ Vue.component('list_with_tasks', {
     data() {
         return {
             countInSecond: 0,
+            showInputField: false,
+            showAddTaskButton: false,
+            newTaskName: null,
         }
     },
     template: `
@@ -45,6 +48,12 @@ Vue.component('list_with_tasks', {
             <p v-if="list.tasks.task4.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task4.activity" v-model="list.tasks.task4.activity" @click="checkboxClick">{{list.tasks.task4.name}} <button v-if="buttonDelByColumnFirst" :disabled="!list.buttonDeleteTaskActive" @click="deleteTask(4)">Del</button></p>
             <p v-if="list.tasks.task5.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task5.activity" v-model="list.tasks.task5.activity" @click="checkboxClick">{{list.tasks.task5.name}} <button v-if="buttonDelByColumnFirst" :disabled="!list.buttonDeleteTaskActive" @click="deleteTask(5)">Del</button></p>
             <p v-if="list.dateOfFinish">{{list.dateOfFinish}}</p>
+
+            <p v-if="showInputField"><input type="type" v-model="newTaskName"><button @click.prevent="insertNewTask">add</button><button @click.prevent="cancelNewTask">cancel</button></p>
+
+            <button class="btn_add_task" v-if="column_id=='first' && showAddTaskButton" @click.prevent="wantAddTask">+++</button>
+
+            <hr>
         </div>
     `,
     methods: {
@@ -85,8 +94,26 @@ Vue.component('list_with_tasks', {
                 }
             }, 100);
         },
+        wantAddTask(){
+            this.showInputField = true;
+        },
+        cancelNewTask(){
+            this.showInputField = false;
+            this.newTaskName= null;
+        },
+        insertNewTask(){
+            for(let task in this.list.tasks){
+                if(this.list.tasks[task].name == null){
+                    this.list.tasks[task].name = this.newTaskName;
+                    this.newTaskName = null;
+                }
+            }
+            this.showInputField= false;
+            this.list.buttonDeleteTaskActive = true;
+            this.checkCountInList();
+        },
+
         deleteTask(numb){
-            ///////////////////////////////////////////////////////////////////////////////////////
             switch(Number(numb)){
                 case 1:
                     this.list.tasks.task1.name= null;
@@ -137,11 +164,31 @@ Vue.component('list_with_tasks', {
             }else{
                 this.list.buttonDeleteTaskActive = false;
             }
+            if(over < 5){
+                this.showAddTaskButton= true;
+            }
 
+        },
+        checkCountInList(){
+            let overalCountTasks = 0;
+            let activeCheckboxes = 0;
+            for (let i in this.list.tasks) {
+                if (this.list.tasks[i].name) {
+                    overalCountTasks++;
+                    if (this.list.tasks[i].activity) {
+                        activeCheckboxes++;
+                    }
+                }
+            }
+            if(overalCountTasks < 5){
+                this.showAddTaskButton = true;
+            }else{
+                this.showAddTaskButton = false;
+            }
         }
     },
     mounted() {
-
+        this.checkCountInList();
     }
 })
 

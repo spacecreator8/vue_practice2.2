@@ -5,7 +5,7 @@
 }
 
 body{
-    background-color:rgb(248, 234, 31);
+    background-color:rgb(194, 224, 59);
 }
 .column_space{
     width:80%;
@@ -34,4 +34,7 @@ body{
 }
 .red-text{
     color:red;
+}
+.btn_add_task{
+    margin:5px
 }
