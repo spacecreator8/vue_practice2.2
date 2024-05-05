@@ -25,6 +25,10 @@ Vue.component('list_with_tasks', {
         block: {
             type: Boolean,
             required: true,
+        },
+        buttonDelByColumnFirst: {
+            type: Boolean,
+            required: true,
         }
     },
     data() {
@@ -35,18 +39,16 @@ Vue.component('list_with_tasks', {
     template: `
         <div class="list">
             <h3>{{list.title}}</h3>
-            <p v-if="list.tasks.task1.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task1.activity" v-model="list.tasks.task1.activity" @click="checkboxClick">{{list.tasks.task1.name}}</p>
-            <p v-if="list.tasks.task2.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task2.activity" v-model="list.tasks.task2.activity" @click="checkboxClick">{{list.tasks.task2.name}}</p>
-            <p v-if="list.tasks.task3.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task3.activity" v-model="list.tasks.task3.activity" @click="checkboxClick">{{list.tasks.task3.name}}</p>
-            <p v-if="list.tasks.task4.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task4.activity" v-model="list.tasks.task4.activity" @click="checkboxClick">{{list.tasks.task4.name}}</p>
-            <p v-if="list.tasks.task5.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task5.activity" v-model="list.tasks.task5.activity" @click="checkboxClick">{{list.tasks.task5.name}}</p>
+            <p v-if="list.tasks.task1.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task1.activity" v-model="list.tasks.task1.activity" @click="checkboxClick">{{list.tasks.task1.name}} <button v-if="buttonDelByColumnFirst" :disabled="!list.buttonDeleteTaskActive" @click="deleteTask(1)">Del</button></p>
+            <p v-if="list.tasks.task2.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task2.activity" v-model="list.tasks.task2.activity" @click="checkboxClick">{{list.tasks.task2.name}} <button v-if="buttonDelByColumnFirst" :disabled="!list.buttonDeleteTaskActive" @click="deleteTask(2)">Del</button></p>
+            <p v-if="list.tasks.task3.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task3.activity" v-model="list.tasks.task3.activity" @click="checkboxClick">{{list.tasks.task3.name}} <button v-if="buttonDelByColumnFirst" :disabled="!list.buttonDeleteTaskActive" @click="deleteTask(3)">Del</button></p>
+            <p v-if="list.tasks.task4.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task4.activity" v-model="list.tasks.task4.activity" @click="checkboxClick">{{list.tasks.task4.name}} <button v-if="buttonDelByColumnFirst" :disabled="!list.buttonDeleteTaskActive" @click="deleteTask(4)">Del</button></p>
+            <p v-if="list.tasks.task5.name"><input type="checkbox" :disabled="beDisabled || block || list.tasks.task5.activity" v-model="list.tasks.task5.activity" @click="checkboxClick">{{list.tasks.task5.name}} <button v-if="buttonDelByColumnFirst" :disabled="!list.buttonDeleteTaskActive" @click="deleteTask(5)">Del</button></p>
             <p v-if="list.dateOfFinish">{{list.dateOfFinish}}</p>
         </div>
     `,
-    methods: {//Метод реагирует. Есть подозрение что при дальнейшем написании логики она будет применяться ко всем экземплярам компонента - потому что нет идентификации. Данные изменяются в конкретном объекте не затрагивая сторонние объекты
+    methods: {
         checkboxClick() {
-            // Все работает, НО! почему-то данные вывода в консоль запаздывают на один клик по ЧБ.(исправил поставив задержку)
-
             setTimeout(() => {
                 let overalCountTasks = 0;
                 let activeCheckboxes = 0;
@@ -82,6 +84,60 @@ Vue.component('list_with_tasks', {
                     }
                 }
             }, 100);
+        },
+        deleteTask(numb){
+            ///////////////////////////////////////////////////////////////////////////////////////
+            switch(Number(numb)){
+                case 1:
+                    this.list.tasks.task1.name= null;
+                    this.list.tasks.task1.activity= false;
+                    break;
+                case 2:
+                    this.list.tasks.task2.name= null;
+                    this.list.tasks.task2.activity= false;
+                    break;
+                case 3:
+                    this.list.tasks.task3.name= null;
+                    this.list.tasks.task3.activity= false;
+                    break;
+                case 4:
+                    this.list.tasks.task4.name= null;
+                    this.list.tasks.task4.activity= false;
+                    break;
+                case 5:
+                    this.list.tasks.task5.name= null;
+                    this.list.tasks.task5.activity= false;
+                    break;
+            }
+
+            let over=0;
+            let act=0;
+            for (let taskKey in this.list.tasks) {
+                let task = this.list.tasks[taskKey];
+                if (task.activity == true) {
+                    act++;
+                }
+                if (task.name != null) {
+                    over++;
+                }
+            }
+
+            if ((over / act) >= 1.5 && (over / act) <= 2) {           
+                let copy = Object.assign({}, this.list);
+                copy.tasks = Object.assign({}, this.list.tasks);
+                for(key in copy.tasks){
+                    copy.tasks[key] = Object.assign({}, this.list.tasks[key]);
+                }
+                eventBus.$emit('just-push-in-second', copy);
+                eventBus.$emit('just-del-in-first', this.indexOfList);
+            }
+
+            if(over>=4){
+                this.list.buttonDeleteTaskActive = true;
+            }else{
+                this.list.buttonDeleteTaskActive = false;
+            }
+
         }
     },
     mounted() {
@@ -107,13 +163,14 @@ Vue.component('column', {
             // listsArray: [],
             beDisabled: false,
             firstColumnBlock: false,
+            buttonDelByColumnFirst: this.column_id=='first' ? true : false ,
         }
     },
     template: `
         <div class="column">
             <p>{{column_name}}</p>
             <div  v-if="listsArray" v-for="(list, index) in listsArray">
-                <list_with_tasks :block="firstColumnBlock" :list="list" :indexOfList="index" :column_id="column_id" :beDisabled="beDisabled"></list_with_tasks>
+                <list_with_tasks :block="firstColumnBlock" :list="list" :indexOfList="index" :column_id="column_id" :beDisabled="beDisabled" :buttonDelByColumnFirst="buttonDelByColumnFirst"></list_with_tasks>
             </div>
         </div>
     `,
@@ -294,6 +351,7 @@ Vue.component('creator', {
             blank: {
                 title: null,
                 dateOfFinish: null,
+                buttonDeleteTaskActive: false,
                 tasks: {
                     task1: {
                         name: null,
@@ -333,21 +391,9 @@ Vue.component('creator', {
             eventBus.$emit('say-me-count-first');
             this.errors = [];
 
-
-            // if (this.countInFirst >= 3) {
-            //     this.errors.push('В первом столбце может быть максимум 3 записи.');
-            // }else if(this.countInFirst == 2){
-            //     eventBus.$emit('block-form-please');
-            // }else{
-            //     eventBus.$emit('unblock-form-please');
-            // }
-
-
             if (!this.blank.title) {
                 this.errors.push('Заголовок обязателен.')
             }
-
-
             let counterValidTasks=0;
             for(let i in this.blank.tasks){
                 if(this.blank.tasks[i].name){
@@ -357,6 +403,7 @@ Vue.component('creator', {
             if(counterValidTasks < 3){
                 this.errors.push('Три поля обязательны к заполнению.')
             }
+ 
 
             if (!this.errors.length) {
                 let copy = Object.assign({}, this.blank);
@@ -364,8 +411,21 @@ Vue.component('creator', {
                 for (let i in this.blank.tasks) {
                     copy.tasks[i] = Object.assign({}, this.blank.tasks[i]);
                 }
+
+                let over=0;//От этого счетчика будет зависеть дизейбл кнопок на удаление задач в листе
+                for(key in this.blank.tasks){
+                    let asd = this.blank.tasks[key];
+                    if(asd.name){
+                        over++;                      
+                    }
+                }
+                if(over>=4){
+                    copy.buttonDeleteTaskActive = true;
+                }
+
                 this.blank = {
                     title: null,
+                    buttonDeleteTaskActive: false,
                     tasks: {
                         task1: {
                             name: null,
