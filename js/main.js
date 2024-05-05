@@ -128,8 +128,8 @@ Vue.component('list_with_tasks', {
                 for(key in copy.tasks){
                     copy.tasks[key] = Object.assign({}, this.list.tasks[key]);
                 }
-                eventBus.$emit('just-push-in-second', copy);
-                eventBus.$emit('just-del-in-first', this.indexOfList);
+                eventBus.$emit('just-push-in-second-if-you-can', copy, this.indexOfList);
+                // eventBus.$emit('just-del-in-first', this.indexOfList);
             }
 
             if(over>=4){
@@ -286,6 +286,19 @@ Vue.component('column', {
                     this.listsArray.push(copy);
                     let arrayForStorrage = this.listsArray.slice();
                     eventBus.$emit('saveMeInStorage', this.column_id, arrayForStorrage)
+                }
+            })
+
+            eventBus.$on('just-push-in-second-if-you-can', (copy, index)=>{
+                if(this.column_id=='second'){
+                    if(this.listsArray.length >= 5){
+                        eventBus.$emit('block-first-col');
+                    }else{
+                        this.listsArray.push(copy);
+                        let arrayForStorrage = this.listsArray.slice();
+                        eventBus.$emit('saveMeInStorage', this.column_id, arrayForStorrage)
+                        eventBus.$emit('just-del-in-first', index);
+                    }
                 }
             })
 
