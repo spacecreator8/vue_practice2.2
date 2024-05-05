@@ -209,7 +209,9 @@ Vue.component('column', {
             listsArray: localStorage[this.column_id] ? JSON.parse(localStorage[this.column_id]) : [],
             // listsArray: [],
             beDisabled: false,
-            firstColumnBlock: false,
+
+            firstColumnBlock: this.column_id=='first' ? (localStorage['firstColumnBlock'] ? true : false) : false,
+            // firstColumnBlock: false,
             buttonDelByColumnFirst: this.column_id=='first' ? true : false ,
         }
     },
@@ -258,7 +260,7 @@ Vue.component('column', {
         eventBus.$on('block-first-col', function () {
             if (this.column_id == 'first') {
                 this.firstColumnBlock = true;
-                
+                localStorage.setItem('firstColumnBlock', JSON.stringify(this.firstColumnBlock));  
             }
 
         }.bind(this))
