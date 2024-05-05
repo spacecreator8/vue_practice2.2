@@ -320,18 +320,16 @@ Vue.component('column', {
                 }
             }.bind(this))
 
-            eventBus.$on('yes-no-block-form',()=>{//Работает бредово - когда через консоль выводил количество в массиве- выдавал три цифры(срабатывал три раза) с разницей в 1 (не всегда) по возрастанию, последняя была истинной
+            eventBus.$on('yes-no-block-form',()=>{
                 if(this.column_id == 'first'){
                     setTimeout(()=>{                    
                         if(this.listsArray.length == 3){
                             eventBus.$emit('block-form-please');
                         }else{
                             eventBus.$emit('unblock-form-please');
-                        }                  
+                        }
                     }, 100)
                 }
-                
-
             })
 
     },
@@ -469,6 +467,9 @@ Vue.component('creator', {
 
     },
     mounted() {
+        setTimeout(()=>{eventBus.$emit('yes-no-block-form');},100)
+        
+
         eventBus.$on('say-me-count-first-resp', function (len) {
             this.countInFirst = len;
 
